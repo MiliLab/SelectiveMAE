@@ -40,7 +40,7 @@ which significantly accelerates convergence and enhances representation learning
 - [x] OpticalRS-4M dataset has be released. 
 - [x] OpticalRS-13M dataset will be released. 
 - [x] Codes and configs for downstream tasks of Scene Classification. 
-- [ ] Codes and configs for downstream tasks of Object Detection and Semantic Segmentation.
+- [x] Codes and configs for downstream tasks of Object Detection and Semantic Segmentation.
 
 
 
@@ -154,6 +154,86 @@ torchrun --nproc_per_node=1 --nnodes 1 --master_port 1888 \
 --finetune 'your_checkpoint.pth'
 ```
 The `--split` can be changed to your setting, like 19/28/55.
+
+
+## 🎁Object Detection & Semantic Segmentation
+
+### Horizontal Object Detection (using MMDetection)
+
+Training on DIOR using Faster-RCNN with a backbone network of SelectiveMAE pretrained ViT-L:
+
+```
+srun -J mmdet -p gpu --gres=dcu:4 --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/train.py configs/wfx/vit-l-frcn-800-proposed-dior.py \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/dior/vit-l-frcn-800-proposed-dior \
+--launcher="slurm"
+```
+
+Then testing and generating dection results:
+
+```
+srun -J mmdet -p gpu --gres=dcu:4 --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/test.py configs/wfx/vit-l-frcn-800-proposed-dior.py \
+/diwang/work_dir/wfx_iccv/finetune/dior/vit-l-frcn-800-proposed-dior/epoch_12.pth \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/dior/vit-l-frcn-800-proposed-dior/predict \
+--show-dir=/diwang/work_dir/wfx_iccv/finetune/dior/vit-l-frcn-800-proposed-dior/predict/show \
+--launcher="slurm" --cfg-options val_cfg=None val_dataloader=None val_evaluator=None
+```
+
+### Rotated Object Detection (using MMRotate)
+
+**(Using MMRotate 1.0.0rc1)** Training on DIOR-R using Oriented-RCNN with a backbone network of SelectiveMAE pretrained ViT-L:
+
+```
+srun -J mmrot -p gpu --gres=dcu:4 --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/train.py configs/wfx/vit-l-orcn-800-proposed-diorr.py \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/diorr/vit-l-orcn-800-proposed-diorr \
+--launcher="slurm"
+```
+
+**(Using MMRotate 1.0.0rc1)** Testing on DIOR-R for evaluation and visualizing detection maps.
+
+```
+srun -J mmrot -p gpu --gres=dcu:4 --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/test.py configs/wfx/vit-l-orcn-800-proposed-diorr.py \
+/diwang/work_dir/wfx_iccv/finetune/diorr/vit-l-orcn-800-proposed-diorr/epoch_12.pth \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/diorr/vit-l-orcn-800-proposed-diorr/predict \
+--show-dir=/diwang/work_dir/wfx_iccv/finetune/diorr/vit-l-orcn-800-proposed-diorr/predict/show \
+--launcher="slurm" --cfg-options val_cfg=None val_dataloader=None val_evaluator=None
+```
+
+### Semantic Segmentation (using MMSegmentation)
+
+Training on SpaceNetv1 using UperNet with a backbone network of SelectiveMAE pretrained ViT-L:
+
+```
+srun -J mmseg -p gpu --gres=dcu:4 --ntasks=8 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/train.py configs/wfx/vit-l-upernet-384-proposed-spacenetv1.py \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/spacenetv1/vit-l-upernet-384-proposed-spacenetv1 \
+--launcher="slurm" --cfg-options 'find_unused_parameters'=True
+```
+
+Testing on SpaceNetv1 for accuracy evaluation and generating prediction maps:
+
+```
+srun -J mmseg -p gpu --gres=dcu:4 --ntasks=8 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/test.py configs/wfx/vit-l-upernet-384-proposed-spacenetv1.py \
+/diwang/work_dir/wfx_iccv/finetune/spacenetv1/vit-l-upernet-384-proposed-spacenetv1/iter_80000.pth \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/spacenetv1/vit-l-upernet-384-proposed-spacenetv1/predict \
+--show-dir=/diwang/work_dir/wfx_iccv/finetune/spacenetv1/vit-l-upernet-384-proposed-spacenetv1/predict/show \
+--launcher="slurm" --cfg-options val_cfg=None val_dataloader=None val_evaluator=None
+```
+**Online Evaluation**: Testing on LoveDA for submittting online evaluation results and generating prediction maps:
+
+```
+srun -J mmseg -p gpu --gres=dcu:4 --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8 --kill-on-bad-exit=1 \
+python -u tools/test.py configs/wfx/vit-l-upernet-512-proposed-loveda.py \
+/diwang/work_dir/wfx_iccv/finetune/loveda/vit-l-upernet-512-proposed-loveda/iter_80000.pth \
+--work-dir=/diwang/work_dir/wfx_iccv/finetune/loveda/vit-l-upernet-512-proposed-loveda/predict \
+--out=/diwang/work_dir/wfx_iccv/finetune/loveda/vit-l-upernet-512-proposed-loveda/predict/submit \
+--show-dir=/diwang/work_dir/wfx_iccv/finetune/loveda/vit-l-upernet-512-proposed-loveda/predict/show \
+--launcher="slurm" --cfg-options val_cfg=None val_dataloader=None val_evaluator=None
+```
 
 # 🔗Citation
 If you find SelectiveMAE helpful, please consider citing:
