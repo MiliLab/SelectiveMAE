@@ -45,6 +45,7 @@ which significantly accelerates convergence and enhances representation learning
 
 
 ## 🔥 News
+* **`2025.08`** : The object detection and semantic segmentation codes have been released.
 * **`2025.07`** : The classification codes have been released.
 * **`2025.06`** : **SelectiveMAE has been accepted by ICCV2025.**
 * **`2025.06`** : OpticalRS-13M has been released on 🤗[HuggingFace](https://huggingface.co/datasets/initiacms/OpticalRS-13M).
